@@ -77,7 +77,7 @@ class Measurments():
         elif str(contact_name) not in list(self.__dict_of_measurments.keys()):
             raise ValueError(f'{contact_name} not exist in {self.__sample}')
         else:
-            return {str(contact_name) :self.__dict_of_measurments[str(contact_name)]}
+            return {str(contact_name): self.__dict_of_measurments[str(contact_name)]}
     
     # удаление контакта или контактов из словаря с измерениями
     def delete_contacts(self, contacts_name: str | list) -> None:
@@ -193,7 +193,7 @@ class Draw_DC_IV():
         ax.grid(which='minor', linewidth = 0.2)
         ax.set_xlim(xmin= V.min()*1.2, xmax=V.max()*1.2)
         ax.set_ylim(ymin= I.min()*0.2, ymax=I.max()*5)
-        colors = colormaps['viridis'](np.linspace(0, 1, len(V)))
+        colors = colormaps['plasma'](np.linspace(0, 1, len(V)))
         segments = [[[V[i], I[i]], [V[i+1], I[i+1]]] for i in range(len(V)-1)]
         line_coll = LineCollection(segments)
         line_coll.set_color(colors)
@@ -231,7 +231,7 @@ class Draw_DC_IV():
 
     # задает градиент для последовательности графиков
     def colorize_multiple(self, line_coll: LineCollection, start_color: str = '#ff0000', end_color: str = '#1e00ff'):
-        line_coll.set_color(self.__to_colors(len(line_coll._paths), start_color, end_color))
+        line_coll.set_color(self.__to_colors(len(line_coll.get_segments()), start_color, end_color))
 
     # рисует множество данных на одном графике
     def multiple(self, dict_of_measurs: dict, axes: axes, **kwargs) -> None:
@@ -239,8 +239,11 @@ class Draw_DC_IV():
         for contact in list(dict_of_measurs.keys()):
             for measur in list(dict_of_measurs[contact].keys()):
                 if dict_of_measurs[contact][measur] == 'DC_IV':
-                    DC_IV_data = get_DC_IV_data(os.path.join(self.__sample_path, contact, measur + '.data'))
-                    data_colletcion.append(np.array([DC_IV_data['voltage'], np.abs(DC_IV_data['current'])]).transpose())
+                    try:
+                        DC_IV_data = get_DC_IV_data(os.path.join(self.__sample_path, contact, measur + '.data'))
+                        data_colletcion.append(np.array([DC_IV_data['voltage'], np.abs(DC_IV_data['current'])]).transpose())
+                    except:
+                        continue
                 else:
                     continue
         line_collection = LineCollection(data_colletcion, **kwargs)
@@ -293,7 +296,7 @@ class Draw_DC_IV():
         ax_3_4.set(ylim = ax_2_4.get_ylim())
 
         return (fig, ax_1, [ax_2_1, ax_2_2, ax_2_3, ax_2_4], [ax_3_1, ax_3_2, ax_3_3, ax_3_4])
-    
+
     def add_single_line(self, ax: axes, contact: str, measur: str, **kwargs) -> axes:
         DC_IV_data = get_DC_IV_data(os.path.join(self.__sample_path, contact, str(measur) + '.data'))
         V, I = DC_IV_data['voltage'], np.abs(DC_IV_data['current'])
