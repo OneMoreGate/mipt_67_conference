@@ -193,7 +193,7 @@ class Draw_DC_IV():
         ax.grid(which='minor', linewidth = 0.2)
         ax.set_xlim(xmin= V.min()*1.2, xmax=V.max()*1.2)
         ax.set_ylim(ymin= I.min()*0.2, ymax=I.max()*5)
-        colors = colormaps['plasma'](np.linspace(0, 1, len(V)))
+        colors = colormaps['viridis'](np.linspace(0, 1, len(V)))
         segments = [[[V[i], I[i]], [V[i+1], I[i+1]]] for i in range(len(V)-1)]
         line_coll = LineCollection(segments)
         line_coll.set_color(colors)
