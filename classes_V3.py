@@ -106,9 +106,11 @@ class DC_IV():
     def delete_measurs(self, contact: str | int, measur: list) -> None:
         contact = self.__contact_errors(contact)
         will_be_del = set([i for i in measur if type(i) == int])
+        new_list = self.__full_DC_IV_dict[contact]
         for measur in will_be_del:
             if measur in self.__full_DC_IV_dict[contact]:
-                self.__full_DC_IV_dict[contact].remove(measur)
+                new_list.remove(measur)
+        self.__full_DC_IV_dict[contact] = new_list
 
     # возвращает список DC IV измерений с одного контакта 
     def get_contact_measurs(self, contact: str | int):
