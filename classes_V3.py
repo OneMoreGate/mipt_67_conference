@@ -106,11 +106,9 @@ class DC_IV():
     def delete_measurs(self, contact: str | int, measur: list) -> None:
         contact = self.__contact_errors(contact)
         will_be_del = set([i for i in measur if type(i) == int])
-        new_list = self.__full_DC_IV_dict[contact]
         for measur in will_be_del:
             if measur in self.__full_DC_IV_dict[contact]:
-                new_list.remove(measur)
-        self.__full_DC_IV_dict[contact] = new_list
+                self.__full_DC_IV_dict[contact].remove(measur)
 
     # возвращает список DC IV измерений с одного контакта 
     def get_contact_measurs(self, contact: str | int):
@@ -156,25 +154,46 @@ class DC_IV():
         return data
         
     # вызвращает словарь со значениями токов во включенном и выключенном состоянии на основе списка измерений
-    def get_on_off_current(self, contact: str | int, check_voltage: float) -> dict:
+    def get_on_off_current(self, contact: str | int, check_voltage: float, measurs: list = None) -> dict:
         I_on = []
         I_off = []
         I_on_off = []
         contact = self.__contact_errors(contact)
-        for measur in self.__full_DC_IV_dict[contact]:
-            Voltage, Current = self.get_single_data(contact, measur)
-            if check_voltage not in list(Voltage):
-                print(f'value V = {check_voltage} is not exist in file \'{measur}.data\' from \'{contact}\' contact')
-                continue
-            else:
-                try:
-                    a, b = Current.loc[Voltage == check_voltage]
-                    I_on.append(a)
-                    I_off.append(b)
-                    I_on_off.append(a/b)
-                except:
-                    print(f'Unexpected error in file \'{measur}.data\' from \'{contact}\' folder')
+        if measurs == None:
+            for measur in self.__full_DC_IV_dict[contact]:
+                Voltage, Current = self.get_single_data(contact, measur)
+                if check_voltage not in list(Voltage):
+                    print(f'value V = {check_voltage} is not exist in file \'{measur}.data\' from \'{contact}\' contact')
                     continue
+                else:
+                    try:
+                        a, b = Current.loc[Voltage == check_voltage]
+                        I_on.append(a)
+                        I_off.append(b)
+                        I_on_off.append(a/b)
+                    except:
+                        print(f'Unexpected error in file \'{measur}.data\' from \'{contact}\' folder')
+                        continue
+        else:
+            if not isinstance(measurs, list):
+                raise TypeError(f'measurs must be list type not {type(measurs)}')
+            for measur in measurs:
+                if not isinstance(measur, int):
+                    raise TypeError(f'measurs elements must be int type not {type(measur)}')
+                Voltage, Current = self.get_single_data(contact, measur)
+                if check_voltage not in list(Voltage):
+                    print(f'value V = {check_voltage} is not exist in file \'{measur}.data\' from \'{contact}\' contact')
+                    continue
+                else:
+                    try:
+                        a, b = Current.loc[Voltage == check_voltage]
+                        I_on.append(a)
+                        I_off.append(b)
+                        I_on_off.append(a/b)
+                    except:
+                        print(f'Unexpected error in file \'{measur}.data\' from \'{contact}\' folder')
+                        continue
+
         return {'on': np.array(I_on), 'off': np.array(I_off), 'on_off': np.array(I_on_off)}
     
     def __get_deriv(self, contact: str | int, measur: str | int) -> list:
@@ -226,7 +245,6 @@ class DC_IV():
                 V_th.append(pos_right.loc[np.argmax(pos_right['derivative'])]['voltage'])
                 V_hold.append(pos_left.loc[np.argmax(pos_left['derivative'])]['voltage'])
         return [V_th, V_hold]
-        
             
     # рисует одну ВАХ
     def draw_single_plot(self, contact: str | int, measur: str | int, save_path: str = None, cmap: str = 'plasma') -> None:
@@ -360,13 +378,13 @@ class DC_IV():
             raise TypeError('lines must be LineCollection type')
         
     # задает градиент для одного графика
-    def colorize_line(self, ax: axes, which: int = 1, start_color: str = '#ff0000', end_color: str = '#1e00ff'):
+    def colorize_line(self, ax: axes, which: int = 1, start_color: str = '#ff0000', end_color: str = '#1e00ff',**kwargs):
         lines = ax.get_lines()
         V, I = lines[which-1].get_data()
         I = np.abs(I)
         segments = [([V[i], I[i]], [V[i+1], I[i+1]]) for i in range(len(V)-1)]
         color = self.__to_colors(len(segments), start_color, end_color)
-        line_coll = LineCollection(segments)
+        line_coll = LineCollection(segments, **kwargs)
         line_coll.set_colors(color)
         line_coll.set_joinstyle('round')
         ax.add_collection(line_coll)
